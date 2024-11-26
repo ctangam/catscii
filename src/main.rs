@@ -1,4 +1,3 @@
-use pretty_hex::PrettyHex;
 use serde::Deserialize;
 
 #[tokio::main]
