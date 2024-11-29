@@ -1,5 +1,10 @@
-FROM ubuntu:20.04
+################################################################################
+FROM ubuntu:20.04 AS base
 
+################################################################################
+FROM base AS builder
+
+# Install required dependencies
 RUN set -eux; \
     apt update; \
     apt install -y --no-install-recommends \
@@ -24,13 +29,33 @@ RUN set -eux; \
 WORKDIR /app
 COPY src src
 COPY Cargo.toml Cargo.lock ./
-
 RUN --mount=type=cache,target=/root/.rustup \
     --mount=type=cache,target=/root/.cargo/registry \
     --mount=type=cache,target=/root/.cargo/git \
     --mount=type=cache,target=/app/target \
     set -eux; \
     cargo build --release; \
-    cp target/release/catscii .
+    objcopy --compress-debug-sections ./target/release/catscii ./catscii
+
+################################################################################
+FROM base AS app
+
+SHELL [ "/bin/bash", "-c" ]
+
+# Install run-time dependencies, remove extra APT files afterwards.
+# This must be done in the same `RUN` command, otherwise it doesn't help
+# to reduce the image size.
+RUN set -eux; \
+    apt update; \
+    apt install -y --no-install-recommends \
+      ca-certificates \
+      ; \
+    apt clean autoclean; \
+    apt autoremove --yes; \
+    rm -rf /var/lib/{apt,dpkg,cache,log}/
+
+# Copy app from builder
+WORKDIR /app
+COPY --from=builder /app/catscii .
 
 CMD ["/app/catscii"]

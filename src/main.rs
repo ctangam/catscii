@@ -21,6 +21,15 @@ struct ServerState {
 
 #[tokio::main]
 async fn main() {
+    let filter = Targets::from_str(std::env::var("RUST_LOG").as_deref().unwrap_or("info"))
+        .expect("RUST_LOG should be a valid tracing filter");
+    tracing_subscriber::fmt()
+        .with_max_level(Level::TRACE)
+        .json()
+        .finish()
+        .with(filter)
+        .init();
+
     let _guard = sentry::init((
         std::env::var("SENTRY_DSN").expect("$SENTRY_DSN must be set"),
         sentry::ClientOptions {
@@ -35,15 +44,6 @@ async fn main() {
     )
     .install()
     .unwrap();
-
-    let filter = Targets::from_str(std::env::var("RUST_LOG").as_deref().unwrap_or("info"))
-        .expect("RUST_LOG should be a valid tracing filter");
-    tracing_subscriber::fmt()
-        .with_max_level(Level::TRACE)
-        .json()
-        .finish()
-        .with(filter)
-        .init();
 
     let state = ServerState {
         client: Default::default(),

@@ -1,0 +1,5 @@
+[registries.catscii]
+index = "ssh://git@ssh.shipyard.rs/catscii-bfb51cec/crate-index.git"
+
+[net]
+git-fetch-with-cli = true
